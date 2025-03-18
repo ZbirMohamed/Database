@@ -1,0 +1,18 @@
+services:
+  db:
+    image: postgres:14-alpine3.20
+    ports:
+      - "3307:5432"
+    container_name: db-pos
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: test
+      POSTGRES_USER: root
+      POSTGRES_DB: indexing
+    volumes:
+      - postgres:/var/lib/postgresql/data
+      - ./indexation:/indexation
+      - ./partitioning:/partitioning
+
+volumes:
+  postgres:

@@ -1,0 +1,60 @@
+### Sharding ####
+Sharding is NOT PARTITIONING.
+
+1- Horizontal Partitioning:
+    - It’s slicing your chunky table into small chunks (tables) known as PARTITIONS 
+    - Partitioning use strategy in order to SLICE your table in a meaningful way
+        1- Hash Partitioning
+        2- Range Partitioning
+        3- List Partitioning
+        4- Composite(Sub Partitioning)
+
+Sharding on the other hand does the same thing but in a distribueted manner your table is not sliced internaly ( in the same database) but 
+it is distributed across multiple databases
+    - Consistent Hashing
+
+Pro of Sharding:
+    - Scalability
+        ○ Data
+        ○ Memory
+    - Security (users can access certain shards)
+    - Optimal and Smaller index size
+
+Cons of Sharding:
+    - Complex client (aware of the shard)
+    - Transactions across shards problem
+    - Rollbacks 
+    - Schema changes are hard (adding a new field)
+    - Joins (Hard to do joins)
+    - Has to be something you know in the query (Querying wiht a field not used in sharding 
+        exemple ==> we used the brand as a sharding filed what if we looked with the id ?
+        what if we looked with a field that we have 0 info about ?
+    )
+
+
+When should we shard our database??
+    Sharding is like your last resort you don't just come and start sharding your database.
+    First you should identify the issue within your RDBMS:
+        Ok let's say your database reads are becoming slower ( Your index table is getting bigger and bigger ) so what is the first solution we can use ? HORIZENTAL PARTITIONING YESSSS, all we can do is partition our table into many slices (partitions) each slice handles a certain range or amount of data (partition1 -> id : 1 - 1000) , (partition2 -> id : 1001 - 2000) etc
+        the question will then be : HoW aRe We SuPpoSeD gEtInG dAtA fRoM these tables ? WELL RDBMS are capable of handling that now (Postgres for exemple) you're not supposed to query data from a specific partition like selecr * from partition_x_1;
+        rdbms will handle this and so you can simply query the main source and through the conditions given the RDBMS will handle it limiting the index table to search thus GREATLYYYYY optimizing your query speed.
+    Ok then but what if my read traffic is HUGEEE ? (there is caching but you'll have to handle cache eviction etc let's stick to what the rdbms are giving)
+        Well EASSSYYYYYY REPLICATION is your answer, you can have as much slave(secondary nodes) as you want and one main node that will take care of your writes, and to handle the traffic we can use a load balancer to distribute ANDDDD WE CAN STILL HAVE THE PARTITIONING in our slave nodes a HUUUUGEEEE win we get to keep our fast reads ANDD handle huge traffic CRZAY RIGHT ?
+     
+                                                ------------load balancer------                                   
+                                                |             |               |
+                                               slave1      slave2         slave3    
+                                                |             |               |  
+                                                ------------Master-------------
+    then what if we have huge WRITING TRAFIC ??
+        Still easy how about using multiple Master nodes, well even so it is quite impossible to break a huge server that can take multiple requests at once but let's dive deeper we can use 2 master let's say US for instance we can have one for US-east, and US-west
+        the only issue would be merging them wich is not that big of a deal.
+    
+    BUT WHAT IF THE WRITES ARE BIGGEEER THANT THAT??
+        Well okay then mister go ahead use your beloved sharding, BUT YOU SHOULD KNOW THAT YOU WILL LOSE THE ACID capabilities of your database
+        NO MORE TRANSACTIONS,NO MORE ROLLBACKS, your system will always be EVENTUALY CONSISTENT not only that joins are harder now etc, yeah you like it now ?
+        Sharding is good and can make your system better but you'll have to really REALLLYYY suffer alot in order to implement such thing
+        youtube did it once since there are millions and billions of reads and uploads at a time and they ran there traffic on a mysql database at once they couldn't handle the traffic even when using all solution so sharding was there last resort but when you are aware of your shards that creates coupling WICH IS A VERY BAD THING WHEN it comes to software, having coupled systems create major problemes when it comes to maintenance and evolving so the solution was VITESS a db clustering system for horizental scaling of MYSQL, it handles the sharding for you it is a middleware implemented over your database cluster it parses the query in order to find the appropriate shard
+        BUT everything comes with a cost, if you have what it takes to maintain vitess go ahead sir use it but if not you should always resort to smaller solution don't over engineer your stuff.
+
+THANK YOU FOR READING.

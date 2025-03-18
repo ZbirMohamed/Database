@@ -1,0 +1,44 @@
+services:
+    
+  db1:
+    container_name: master
+    image: mariadb:11.4
+    environment:
+      MARIADB_ROOT_PASSWORD: test
+      MARIADB_DATABASE: master
+      MARIADB_USER: repl_user
+      MARIADB_PASSWORD: repl_pass
+    volumes:
+      - ./master.cnf:/etc/mysql/my.cnf
+      - data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD","healthcheck.sh","--connect","--innodb_initialized"]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+  db2:
+    container_name: slave
+    image: mariadb:11.4
+    environment:
+      MARIADB_ROOT_PASSWORD: test
+    volumes:
+      - ./slave.cnf:/etc/mysql/my.cnf
+      - data2:/var/lib/mysql
+    ports:
+      - "3307:3306"
+    healthcheck:
+      test: ["CMD","healthcheck.sh","--connect","--innodb_initialized"]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      - db1
+
+
+volumes:
+  data:
+  data2:

@@ -1,0 +1,10 @@
+psql -h <hostname> -U <username> -d <database>
+
+\l      -- Liste les bases de données
+\c mydb -- Se connecter à une base
+\dt     -- Liste les tables de la base courante
+\d users -- Affiche la structure de la table "users"
+\q      -- Quitter psql
+\i /home/user/scripts/script.sql -- utiliser un fichier sql
+
+

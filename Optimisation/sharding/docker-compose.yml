@@ -1,0 +1,55 @@
+services:
+  shard1:
+    container_name: shard1
+    build: ./script  
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: test
+      POSTGRES_USER: root
+      POSTGRES_DB: shards
+    restart: always
+    volumes:
+      - data:/var/lib/postgresql/data
+  shard2:
+    container_name: shard2
+    build: ./script  
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_PASSWORD: test
+      POSTGRES_USER: root
+      POSTGRES_DB: shards
+    restart: always
+    volumes:
+      - data2:/var/lib/postgresql/data 
+  shard3:
+    container_name: shard3
+    build: ./script  
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_PASSWORD: test
+      POSTGRES_USER: root
+      POSTGRES_DB: shards
+    restart: always
+    volumes:
+      - data3:/var/lib/postgresql/data  
+  
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+volumes:
+  data:
+  data2:
+  data3:
+  pgadmin_data:

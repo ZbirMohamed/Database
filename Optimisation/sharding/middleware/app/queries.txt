@@ -1,0 +1,1 @@
+fetch("http://localhost:8888/?brand=ford" , {"method":"POST"}).then(a=> a.json()).then(console.log).catch(console.error);

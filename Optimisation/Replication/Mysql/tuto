@@ -1,0 +1,139 @@
+https://chatgpt.com/share/67d80fe3-e66c-8002-9387-af30af4d474a
+
+
+🛠 1. Architecture de la réplication
+MariaDB utilise une réplication asynchrone où un Master écrit les changements et les Slaves les lisent.
+
+📌 Ce qu’on va faire :
+✔ Un Master (📌 db1) qui reçoit les écritures.
+✔ Un Slave (📌 db2) qui lit les données du Master.
+✔ Configuration de la réplication avec binlogs et utilisateur de réplication.
+
+📜 2. Configuration docker-compose.yml
+Crée un fichier docker-compose.yml avec la configuration suivante :
+
+    Vous allez trouver les instances dans le fichier docker-compose.yml
+
+🚀 Explication :
+
+Le Master (db1) → Contient la base et enregistre les binlogs.
+Le Slave (db2) → Se synchronise avec le Master.
+
+Les fichiers master.cnf et slave.cnf → Configurations spécifiques pour la réplication.
+📂 3. Configurer master.cnf et slave.cnf
+📝 Fichier master.cnf (📍 à placer dans ./master.cnf)
+
+[mysqld]
+server-id=1
+log_bin=/var/lib/mysql/mysql-bin.log
+binlog-do-db=replication_db
+
+📝 Fichier slave.cnf (📍 à placer dans ./slave.cnf)
+
+[mysqld]
+server-id=2
+relay-log=/var/lib/mysql/mysql-relay-bin.log
+read_only=1
+
+
+🔧 4. Démarrer et configurer la réplication
+1️⃣ Démarrer les conteneurs:
+
+    docker-compose up -d
+
+2️⃣ Se connecter au Master (db1) et créer un utilisateur de réplication
+
+Avant il faut modifier le system pour permettre a nos instance mariadb de lire les fichier confs.
+    
+    --- slave ----
+    docker exec -it slave bash
+    chown -R mysql:mysql /var/lib/mysql
+    chmod -R 750 /var/lib/mysql
+   
+    --- master ---
+    docker exec -it master bash
+    cd etc/mysql
+    chmod 644 ./master.cnf
+
+    644 signifie lecture/écriture pour le propriétaire, lecture seule pour les autres (-rw-r--r--).
+    750 siginifie : 
+        
+        7 (rwx) : L’utilisateur (mysql) peut lire, écrire, exécuter.
+        5 (r-x) : Le groupe (mysql) peut lire et exécuter.
+        0 (---) : Les autres utilisateurs n’ont aucun accès.
+
+    docker-compose down
+    docker-compose up -d
+
+
+Entre dans le conteneur Master :
+    
+    docker exec -it master mariadb --user=uroot --password=master
+
+Dans le shell MariaDB, exécute :
+
+    CREATE USER 'repl_user'@'%' IDENTIFIED BY 'repl_pass';
+    GRANT REPLICATION SLAVE ON *.* TO 'repl_user'@'%';
+    FLUSH PRIVILEGES;
+    SHOW MASTER STATUS;
+
+    --- test commande ---
+    SHOW VARIABLES LIKE 'log_bin%';
+
+    --> pour savoir ci le log est utiliser pour la replication
+
+📌 Note le File et la Position du SHOW MASTER STATUS;, on en aura besoin pour le Slave.
+📌 Exemple de sortie :
+
+    +------------------+----------+--------------+------------------+
+    | File            | Position | Binlog_Do_DB | Binlog_Ignore_DB |
+    +------------------+----------+--------------+------------------+
+    | mysql-bin.000001 | 154      | replication_db |                  |
+    +------------------+----------+--------------+------------------+
+
+3️⃣ Configurer le Slave (db2)
+Connecte-toi au Slave :
+
+    docker exec -it slave mariadb --user=root --password=test
+
+Configure la réplication avec les infos du Master (File et Position récupérés précédemment) :
+
+    CHANGE MASTER TO 
+    MASTER_HOST='master',
+    MASTER_USER='repl_user',
+    MASTER_PASSWORD='repl_pass',
+    MASTER_LOG_FILE='mysql-bin.000001',  --> deposer le fichier trouvez ici
+    MASTER_LOG_POS=154; --> DEPOSER LA POSITION ICI  !!!!
+
+    START SLAVE;
+    SHOW SLAVE STATUS\G
+
+✅ Si tout fonctionne bien, tu verras Slave_IO_Running: Yes et Slave_SQL_Running: Yes.
+
+📝 5. Tester la réplication
+Sur le Master (db1), ajoute une table :
+
+    USE master;
+    CREATE TABLE test_table (id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(50));
+    INSERT INTO test_table (name) VALUES ('Hello Replication');
+
+Sur le Slave (db2), exécute :
+
+    USE master;
+    SELECT * FROM test_table;
+
+🎉 Tu devrais voir la même table et les mêmes données que sur le Master ! 🎉
+
+🚀 Résumé
+✅ docker-compose.yml pour gérer les conteneurs.
+✅ Fichiers master.cnf et slave.cnf pour configurer la réplication.
+✅ Création d’un utilisateur de réplication (repl_user).
+✅ Configuration et démarrage du Slave (CHANGE MASTER TO ...).
+✅ Test en insérant des données sur le Master et en les retrouvant sur le Slave.
+
+🔹 Améliorations possibles :
+
+📌 Ajouter plusieurs Slaves en leur assignant un server-id différent.
+📌 Configurer une réplication semi-synchrone pour éviter la perte de données.
+📌 Ajouter Healthchecks pour détecter une panne du Master.
+Si tu veux aller plus loin, dis-moi ce que tu cherches à faire ! 🚀🔥
