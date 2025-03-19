@@ -1,0 +1,42 @@
+###### Partitioning #####
+
+
+Partitioning is the acte of slicing your table INTERNALY into many tables known as partitions.
+
+Partitioning have two types:
+    1- Horizontal:
+        Imagine this as if you're taking a chunk of rows and placing them in a another table(partition). Let's say employee table
+        each employee belongs to a DEPARTEMENT, what if our queries becomes slow since we have many depts and employees
+        we then thought of partitioning our table into small tables each table represents a departement, making our queries
+        faster and accurate, that's what we call partition but the question is now we have multiple tables to deal not only that 
+        ower programme would be aware of those tables thus making it strongly coupled ? well worry not RDBMS handles that super well
+        you'll always query the main table and the latter one will take care of routing your query to the appropriate partition.
+
+    2- Vertical:
+        This on the other hand is distributing your table in mannyu coulmns, it's very usseful when you have a table that have waaay
+        to many coulumn making your queries hard to read and bulking the indexes.
+        Well at this point you get it you have joins, and new tables that you should be taking care of.
+
+
+To Partition your table you should choose a strategy or a type that will benifits you most:
+
+    1-By Range:
+        Dates, Ids etc (1-1000,1001-2000) 
+
+    2-By List:
+        Discrete Vales (States, Regions, zip codes)
+    
+    3-By Hash:
+        Hash functioning(consistent hashing)
+
+Partitiong can help you archive frozen data that is taking space from your fast ssd so you can take off your legacy data from your ssd and use tablespacing to archive the new partition in your hard drive.
+
+Pros:
+    Highly increase the query performance when accessing a single partition.
+    Easy bulk loading (attach partition)
+    Archive old data that are barely accessed into cheap storag
+
+Cons:
+    Updates that move rows from a partition to another (slow or fail sometimes)
+    Inefficient queries could accidently scan all partitions resulting in slower performance
+    Schema changes can be challenging (DBMS could manage it though)
